@@ -53,6 +53,7 @@ const LightsparkAuth = () => {
           const initStatus = await initializationService.initializeWallet(signingPublicKey);
           console.log("Wallet initialization status:", initStatus);
           setInitializationStatus("Wallet initialized successfully");
+          console.log("signingPublicKey:", signingPublicKey);
         }
       } catch (error) {
         setError(error);
