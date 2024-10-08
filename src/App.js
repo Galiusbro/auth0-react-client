@@ -1,8 +1,9 @@
+// App.js
 import "./App.css";
 import { useAuth0 } from "@auth0/auth0-react";
 import TodoList from "./components/TodoList";
-import { useEffect } from "react";
-import axios from "axios";
+import LnurlpRequest from "./components/LnurlpRequest";
+import LightsparkAuth from "./components/LightsparkAuth"; // Импортируем наш новый компонент
 
 function App() {
   const {
@@ -11,35 +12,10 @@ function App() {
     isAuthenticated,
     loginWithPopup,
     user,
-    getAccessTokenSilently,
     isLoading,
   } = useAuth0();
 
-  useEffect(() => {
-    const registerUser = async () => {
-      try {
-        const token = await getAccessTokenSilently();
-        await axios.post(
-          "http://localhost:3033/api/register",
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      } catch (error) {
-        console.error("Registration failed:", error);
-      }
-    };
-
-    if (isAuthenticated) {
-      registerUser();
-    }
-  }, [isAuthenticated, getAccessTokenSilently]);
-
   if (isLoading) {
-    // Показывать загрузку, пока статус авторизации не проверен
     return <div className="flex items-center justify-center h-screen text-2xl font-semibold text-gray-700">Loading...</div>;
   }
 
@@ -57,7 +33,14 @@ function App() {
             <h2 className="text-xl font-bold mb-2">User Information</h2>
             <pre className="bg-gray-50 p-4 rounded-lg text-sm whitespace-pre-wrap">{JSON.stringify(user, null, 2)}</pre>
           </div>
+
+          {/* Компонент Todo и другие */}
           <TodoList />
+          <LnurlpRequest />
+
+          {/* Наш новый компонент для аутентификации в Lightspark */}
+          <LightsparkAuth />
+
         </div>
       ) : (
         <div className="flex flex-col items-center space-y-4">
