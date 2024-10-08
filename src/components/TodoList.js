@@ -174,6 +174,12 @@ const TodoList = () => {
             <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto break-words whitespace-pre-wrap max-h-40">
               {keys.public_key}
             </pre>
+            <p className="text-sm">
+              <strong>Pprivate Key (Base64):</strong>
+            </p>
+            <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto break-words whitespace-pre-wrap max-h-40">
+              {keys.private_key}
+            </pre>
           </div>
         )}
       </div>

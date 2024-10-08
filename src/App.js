@@ -1,19 +1,11 @@
-// App.js
 import "./App.css";
 import { useAuth0 } from "@auth0/auth0-react";
 import TodoList from "./components/TodoList";
 import LnurlpRequest from "./components/LnurlpRequest";
-import LightsparkAuth from "./components/LightsparkAuth"; // Импортируем наш новый компонент
+import LightsparkAuth from "./components/LightsparkAuth"; // Импортируем наш компонент для Lightspark
 
 function App() {
-  const {
-    loginWithRedirect,
-    logout,
-    isAuthenticated,
-    loginWithPopup,
-    user,
-    isLoading,
-  } = useAuth0();
+  const { loginWithRedirect, logout, isAuthenticated, loginWithPopup, user, isLoading } = useAuth0();
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen text-2xl font-semibold text-gray-700">Loading...</div>;
@@ -35,12 +27,11 @@ function App() {
           </div>
 
           {/* Компонент Todo и другие */}
-          <TodoList />
+          {/* <TodoList /> */}
+          <LightsparkAuth />
           <LnurlpRequest />
 
-          {/* Наш новый компонент для аутентификации в Lightspark */}
-          <LightsparkAuth />
-
+          {/* Компонент для Lightspark аутентификации */}
         </div>
       ) : (
         <div className="flex flex-col items-center space-y-4">

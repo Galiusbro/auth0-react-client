@@ -1,111 +1,52 @@
 import { useEffect, useState } from "react";
-import { LightsparkClient, InMemoryTokenStorage } from "@lightsparkdev/wallet-sdk"; // Убираем CustomJwtAuthProvider
 import { useAuth0 } from "@auth0/auth0-react";
-import LightsparkDeploymentService from "./services/LightsparkDeploymentService";
-import LightsparkInitializationService from "./services/LightsparkInitializationService";
-import axios from "axios";
+import generateJwtToken from "./services/GenerateJWT";
+import loginToLightspark from "./services/LoginLS";
 
 const LightsparkAuth = () => {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
-  const [lightsparkClient, setLightsparkClient] = useState(null);
-  const [deploymentStatus, setDeploymentStatus] = useState(null);
-  const [initializationStatus, setInitializationStatus] = useState(null);
-  const [keys, setKeys] = useState(null);
+  const [walletInfo, setWalletInfo] = useState(null);  // Состояние для информации о кошельке
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const authenticateAndDeploy = async () => {
+    const authenticateLightspark = async () => {
       try {
-        // Получаем токен от Auth0
-        const token = await getAccessTokenSilently();
+        // Получаем Auth0 токен для аутентификации
+        const auth0Token = await getAccessTokenSilently();
 
-        // Создаем экземпляр InMemoryTokenStorage для хранения токена
-        const tokenStorage = new InMemoryTokenStorage();
+        // Генерация JWT токена или возврат существующего токена
+        const jwtToken = await generateJwtToken(auth0Token);
+        console.log("Lightspark JWT token generated or retrieved:", jwtToken);
 
-        // Инициализируем Lightspark клиент
-        const client = new LightsparkClient(tokenStorage);
+        // Логин в Lightspark и получение данных о кошельке
+        const response = await loginToLightspark(auth0Token, jwtToken);
+        console.log("Lightspark response:", response);
+        
+        // Сохранение информации о кошельке в состояние
+        setWalletInfo(response);
 
-        // Выполняем логин через JWT токен
-        await client.loginWithJWT(token);
-
-        // Сохраняем Lightspark клиент в состояние
-        setLightsparkClient(client);
-
-        // Запрос ключей из базы
-        const keysResponse = await axios.post(
-          "http://127.0.0.1:5000/generate_keys_if_absent",
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        setKeys(keysResponse.data.keys);
-
-        // Создаем инстансы сервисов для деплоя и инициализации
-        const deploymentService = new LightsparkDeploymentService(client);
-        const initializationService = new LightsparkInitializationService(client);
-
-        // Деплой кошелька
-        const deployStatus = await deploymentService.deployWallet();
-        setDeploymentStatus(deployStatus);
-
-        // После деплоя, инициализируем кошелек
-        if (deployStatus === "Wallet successfully deployed!") {
-          const signingPublicKey = keysResponse.data.keys.public_key; // Извлекаем публичный ключ
-          const initStatus = await initializationService.initializeWallet(signingPublicKey);
-          setInitializationStatus("Wallet initialized successfully");
-        }
       } catch (error) {
+        console.error("Lightspark authentication failed:", error);
         setError(error);
       }
     };
 
     if (isAuthenticated) {
-      authenticateAndDeploy();
+      authenticateLightspark();
     }
   }, [isAuthenticated, getAccessTokenSilently]);
 
-  if (!isAuthenticated) {
-    return <p>Please log in to connect to Lightspark.</p>;
-  }
-
   if (error) {
-    return <div className="text-red-500">Error: {error.message}</div>;
+    return <div>Error connecting to Lightspark: {error.message}</div>;
   }
 
   return (
     <div>
-      {lightsparkClient ? (
+      {walletInfo ? (
         <div>
-          <p>Successfully connected to Lightspark!</p>
-          {deploymentStatus && <p>{deploymentStatus}</p>}
-          {initializationStatus && <p>{initializationStatus}</p>}
-          {keys && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h2 className="text-lg font-bold mb-2">Keys Information</h2>
-              <p className="text-sm">
-                <strong>User ID:</strong> {keys.user_id}
-              </p>
-              <p className="text-sm">
-                <strong>Key ID:</strong> {keys._id}
-              </p>
-              <p className="text-sm">
-                <strong>Certificate:</strong>
-              </p>
-              <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto break-words whitespace-pre-wrap max-h-40">
-                {keys.certificate}
-              </pre>
-              <p className="text-sm">
-                <strong>Public Key (Base64):</strong>
-              </p>
-              <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto break-words whitespace-pre-wrap max-h-40">
-                {keys.public_key}
-              </pre>
-            </div>
-          )}
+          <h2>Successfully connected to Lightspark!</h2>
+          <p><strong>Access Token:</strong> {walletInfo.access_token}</p>
+          <p><strong>Wallet ID:</strong> {walletInfo.wallet.id}</p>
         </div>
       ) : (
         <p>Initializing Lightspark connection...</p>
